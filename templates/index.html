@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סוכן שאלות</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>סוכן שאלות</h1>
+        <input type="text" id="question" placeholder="כתוב את השאלה כאן">
+        <input type="text" class="option" placeholder="א. מסיח 1">
+        <input type="text" class="option" placeholder="ב. מסיח 2">
+        <input type="text" class="option" placeholder="ג. מסיח 3">
+        <input type="text" class="option" placeholder="ד. מסיח 4">
+        <input type="text" class="option" placeholder="ה. מסיח 5 (לא חובה)">
+        <input type="text" class="option" placeholder="ו. מסיח 6 (לא חובה)">
+        <button onclick="submitQuestion()" id="submitBtn">שלח שאלה</button>
+        <div id="statusMessage"></div>
+        <div id="answer"></div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
