@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import logging
+from fuzzywuzzy import fuzz  # התאמה מטושטשת כדי לזהות ניסוחים שונים
 
 app = Flask(__name__)
 
@@ -7,22 +8,28 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# תוכן ה-PDF (דוגמה)
+# טקסט ה-PDF (דוגמה)
 pdf_content = """
 Bible = Old Testament + New Testament
 New Testament: 4 Gospels written by Evangelists: Matthew, Mark, Luke, John.
 """
 
 def check_answer(question, options):
-    """בודק את השאלה מול מאגר המידע"""
+    """בודק את השאלה מול מאגר המידע תוך שימוש בזיהוי ניסוחים שונים"""
     question = question.lower()
+
+    # **רשימת מילים שקשורות לנושא**
+    gospel_keywords = ["מי כתב את הבשורות", "מי חיבר את הבשורות", "who wrote the gospels", "authors of the gospels"]
     
-    if any(term in question for term in ["מי כתב את הבשורות", "who wrote the gospels"]):
-        evangelists = ["matthew", "mark", "luke", "john", "מתי", "מרקוס", "לוקאס", "יוחנן"]
-        for i, option in enumerate(options):
-            if any(evangelist in option.lower() for evangelist in evangelists):
-                return chr(1488 + i) + ". " + option  
-    return "אין לי את המידע הזה בתוך ה-PDF"
+    # **בודקים אם השאלה דומה לאחת מהאפשרויות ברשימה**
+    for key in gospel_keywords:
+        if fuzz.partial_ratio(question, key) > 70:  # אם הדמיון גבוה מספיק, זה קשור לנושא
+            evangelists = ["matthew", "mark", "luke", "john", "מתי", "מרקוס", "לוקאס", "יוחנן"]
+            for i, option in enumerate(options):
+                if any(evangelist in option.lower() for evangelist in evangelists):
+                    return chr(1488 + i) + ". " + option  
+    
+    return "אין לי את המידע הזה בצורה ברורה, נסה לנסח מחדש."
 
 @app.route('/')
 def index():
