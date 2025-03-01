@@ -19,6 +19,7 @@ def extract_text_from_pdf(pdf_path):
                 text += page.extract_text() + " "
     except Exception as e:
         logger.error(f"שגיאה בקריאת ה-PDF: {e}")
+    print("🔍 טקסט מה-PDF:", pdf_text[:1000])  # מציג את 1000 התווים הראשונים של ה-PDF
     return text.lower()
 
 pdf_text = extract_text_from_pdf("תולדות האומנות - רנסאנס.pdf")
