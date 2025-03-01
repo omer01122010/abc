@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 import logging
-from fuzzywuzzy import fuzz  # התאמה מטושטשת כדי לזהות ניסוחים שונים
+import PyPDF2
+from difflib import get_close_matches
 
 app = Flask(__name__)
 
@@ -8,28 +9,29 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# טקסט ה-PDF (דוגמה)
-pdf_content = """
-Bible = Old Testament + New Testament
-New Testament: 4 Gospels written by Evangelists: Matthew, Mark, Luke, John.
-"""
+# קריאת ה-PDF ושמירתו במשתנה
+pdf_path = "תולדות האומנות - רנסאנס.pdf"
 
-def check_answer(question, options):
-    """בודק את השאלה מול מאגר המידע תוך שימוש בזיהוי ניסוחים שונים"""
-    question = question.lower()
+def read_pdf(pdf_path):
+    """קורא את ה-PDF ושומר את התוכן בטקסט"""
+    text = ""
+    with open(pdf_path, "rb") as file:
+        reader = PyPDF2.PdfReader(file)
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
+    return text.lower()  # להקל על חיפושים לא תלויי אותיות גדולות/קטנות
 
-    # **רשימת מילים שקשורות לנושא**
-    gospel_keywords = ["מי כתב את הבשורות", "מי חיבר את הבשורות", "who wrote the gospels", "authors of the gospels"]
+pdf_content = read_pdf(pdf_path)
+
+def find_best_match(question):
+    """מוצא את הקטעים שהכי דומים לשאלה שנשאלה"""
+    sentences = pdf_content.split("\n")
+    matches = get_close_matches(question.lower(), sentences, n=3, cutoff=0.5)
     
-    # **בודקים אם השאלה דומה לאחת מהאפשרויות ברשימה**
-    for key in gospel_keywords:
-        if fuzz.partial_ratio(question, key) > 70:  # אם הדמיון גבוה מספיק, זה קשור לנושא
-            evangelists = ["matthew", "mark", "luke", "john", "מתי", "מרקוס", "לוקאס", "יוחנן"]
-            for i, option in enumerate(options):
-                if any(evangelist in option.lower() for evangelist in evangelists):
-                    return chr(1488 + i) + ". " + option  
-    
-    return "אין לי את המידע הזה בצורה ברורה, נסה לנסח מחדש."
+    if matches:
+        return matches[0]  # מחזיר את ההתאמה הכי טובה
+    else:
+        return "אין לי את המידע הזה בתוך ה-PDF"
 
 @app.route('/')
 def index():
@@ -40,12 +42,11 @@ def get_answer():
     try:
         data = request.json
         question = data.get('question', '')
-        options = data.get('options', [])
-        
-        if not question or len(options) < 4:
-            return jsonify({'error': 'Question and at least 4 options are required'}), 400
+
+        if not question:
+            return jsonify({'error': 'No question provided'}), 400
             
-        answer = check_answer(question, options)
+        answer = find_best_match(question)
         return jsonify({'answer': answer})
     except Exception as e:
         logger.error(f"Error: {str(e)}")
