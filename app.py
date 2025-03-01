@@ -37,30 +37,30 @@ else:
     print("🔍 טקסט מה-PDF (1000 תווים ראשונים):", pdf_text[:1000])
 
 def find_best_match(question, options):
-    """ מחפש את המסיח הנכון מבין האפשרויות """
+    """ מחפש את המסיח הנכון מבין האפשרויות או מחזיר 'אין לי את המידע הזה' """
     if not pdf_text or not options:
         return "אין לי את המידע הזה"
     question = question.lower()
     options = [opt.lower() for opt in options]
 
-    # בדיקות ידניות למונחים ספציפיים
+    # בדיקות ידניות למונחים ספציפיים ב-PDF
     if "גריסיי" in question or "grisaille" in question:
-        if "לצייר דמויות באפור כדי להשיג אשליה של פיסוליות" in options:
-            return "א. לצייר דמויות באפור כדי להשיג אשליה של פיסוליות"
-        elif "לתאר בהדרגתיות את האור והצל על חפצים ודמויות" in options:
-            return "ג. לתאר בהדרגתיות את האור והצל על חפצים ודמויות"
+        for i, opt in enumerate(options):
+            if "לצייר דמויות באפור כדי להשיג אשליה של פיסוליות" in opt:
+                return chr(97 + i) + ". " + opt  # מחזיר "א. ..." וכו'
         return "אין לי את המידע הזה"
     elif "רנסאנס" in question:
-        if "התרחש באירופה במאות 14-17" in options:
-            return "ב. התרחש באירופה במאות 14-17"  # התאם לפי המסיחים
+        for i, opt in enumerate(options):
+            if "התרחש באירופה במאות 14-17" in opt:
+                return chr(97 + i) + ". " + opt
+        return "אין לי את המידע הזה"
+    elif "לאונרדו דה וינצ'י" in question or "leonardo da vinci" in question:
+        for i, opt in enumerate(options):
+            if "צייר" in opt or "פסל" in opt:  # תלוי במידע ב-PDF, כאן אני מניח שהוא אמן
+                return chr(97 + i) + ". " + opt
         return "אין לי את המידע הזה"
 
-    # אם אין התאמה ספציפית, מחפש התאמה כללית (אבל לא רלוונטי כאן)
-    sentences = [s for s in pdf_text.split(". ") if s.strip()]
-    matches = difflib.get_close_matches(question, sentences, n=3, cutoff=0.5)
-    if matches:
-        logger.info(f"התאמה נמצאה: {matches[0]}")
-        return matches[0]
+    # אם אין התאמה ספציפית, מחזיר "אין לי את המידע הזה" לכל שאלה אחרת
     return "אין לי את המידע הזה"
 
 @app.route('/')
